@@ -1,0 +1,68 @@
+media:
+  input: media
+  output: /media
+
+content:
+  - name: artikels
+    label: Artikels
+    type: file
+    path: data/artikels.json
+    format: json
+    list: true
+    fields:
+      - name: titel
+        label: Titel
+        type: string
+        required: true
+      - name: medium
+        label: Medium (bv. De Standaard, Eigen werk)
+        type: string
+      - name: datum
+        label: Publicatiedatum
+        type: date
+      - name: type
+        label: Soort artikel
+        type: select
+        default: Op mijn site
+        options:
+          values: [Op mijn site, Link naar medium, PDF]
+      - name: foto
+        label: Foto
+        type: image
+      - name: intro
+        label: Korte intro (1 à 2 zinnen op het kaartje)
+        type: text
+      - name: tekst
+        label: Volledige tekst (alleen bij 'Op mijn site'; laat een witregel tussen alinea's)
+        type: text
+      - name: link
+        label: Link naar het artikel (alleen bij 'Link naar medium')
+        type: string
+      - name: pdf
+        label: PDF-bestand (alleen bij 'PDF')
+        type: file
+
+  - name: profiel
+    label: Profiel en contact
+    type: file
+    path: data/site.json
+    format: json
+    fields:
+      - name: intro_nl
+        label: Tekst onder je naam (Nederlands)
+        type: text
+      - name: intro_en
+        label: Tekst onder je naam (Engels)
+        type: text
+      - name: email
+        label: E-mailadres
+        type: string
+      - name: linkedin
+        label: LinkedIn-link
+        type: string
+      - name: profielfoto
+        label: Profielfoto
+        type: image
+      - name: achtergrond
+        label: Achtergrondfoto zijbalk
+        type: image
