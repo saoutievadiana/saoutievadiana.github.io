@@ -3,8 +3,8 @@
    Die pas je aan via het beheerpaneel (Pages CMS), niet hier. */
 
 const T = {
-  nl: {navHome:"Artikels", zoek:"Zoek op titel...", alle:"Alle media", geen:"Geen artikels gevonden.",
-       leeg:"Binnenkort verschijnen hier mijn artikels.", terug:"← Alle artikels",
+  nl: {navHome:"Artikelen", zoek:"Zoek op titel...", alle:"Alle media", geen:"Geen artikelen gevonden.",
+       leeg:"Binnenkort verschijnen hier mijn artikelen.", terug:"← Alle artikelen",
        contact:"Contact", contactSub:"Voor opdrachten, tips of samenwerkingen.", kopieer:"Kopieer", gekopieerd:"Gekopieerd",
        type:{site:"Lees hier", link:"Externe link", pdf:"PDF"}, openPdf:"Open de pdf", openLink:"Lees het artikel", locale:"nl-BE"},
   en: {navHome:"Articles", zoek:"Search by title...", alle:"All publications", geen:"No articles found.",
@@ -35,6 +35,10 @@ async function load() {
   setLang(lang === "en" ? "en" : "nl");
 }
 
+/* Vertaalde velden: in het Engels toont de site de _en-versie als die bestaat */
+const tr = (a, k) => (lang === "en" && a[k + "_en"]) ? a[k + "_en"] : a[k];
+const heeftEn = a => !!(a.titel_en || a.tekst_en);
+
 function setLang(l) {
   lang = l; try { localStorage.setItem("lang", l); } catch (e) {}
   document.documentElement.lang = l;
@@ -58,7 +62,7 @@ function home() {
   const draw = () => {
     const q = document.getElementById("zoek").value.toLowerCase();
     const m = document.getElementById("medium")?.value || "";
-    const list = ARTIKELS.filter(a => a.titel.toLowerCase().includes(q) && (!m || a.medium === m))
+    const list = ARTIKELS.filter(a => (a.titel + " " + (a.titel_en || "")).toLowerCase().includes(q) && (!m || a.medium === m))
                          .sort((a, b) => String(b.datum).localeCompare(String(a.datum)));
     document.getElementById("grid").innerHTML = list.length ? list.map(a => {
       const href = a.soort === "link" ? a.link : a.soort === "pdf" ? a.pdf : "#artikel-" + a.id;
@@ -66,7 +70,7 @@ function home() {
       return `<a class="card" href="${esc(href)}"${ext}>
         <div class="thumb" style="background:var(--line)">${thumb(a, `<span>${t().type[a.soort]}</span>`)}</div>
         <div class="meta">${[esc(a.medium), fmt(a.datum)].filter(Boolean).join(" · ")}</div>
-        <h3>${esc(a.titel)}</h3>${a.intro ? `<p>${esc(a.intro)}</p>` : ""}</a>`;
+        <h3>${esc(tr(a, "titel"))}</h3>${tr(a, "intro") ? `<p>${esc(tr(a, "intro"))}</p>` : ""}</a>`;
     }).join("") : `<p class="empty">${t().geen}</p>`;
   };
   document.getElementById("zoek").oninput = draw;
@@ -85,15 +89,51 @@ function contact() {
   });
 }
 
+/* Opgemaakte tekst uit de tekstverwerker: alleen veilige opmaak behouden */
+const TOEGELATEN = new Set(["P","H2","H3","H4","STRONG","B","EM","I","U","S","A","UL","OL","LI","BLOCKQUOTE","BR","HR","IMG","FIGURE","FIGCAPTION"]);
+function schoon(html) {
+  const doc = new DOMParser().parseFromString("<div>" + html + "</div>", "text/html");
+  const wrap = doc.body.firstChild;
+  (function walk(node) {
+    [...node.childNodes].forEach(n => {
+      if (n.nodeType === 3) return;
+      if (n.nodeType !== 1) { n.remove(); return; }
+      if (/^(SCRIPT|STYLE|IFRAME|OBJECT|EMBED|META|LINK|TITLE|NOSCRIPT|SVG|FORM)$/.test(n.tagName)) { n.remove(); return; }
+      walk(n);
+      if (n.tagName === "H1") { const h = doc.createElement("h2"); h.append(...n.childNodes); n.replaceWith(h); return; }
+      if (!TOEGELATEN.has(n.tagName)) { n.replaceWith(...n.childNodes); return; }
+      const href = n.getAttribute("href"), src = n.getAttribute("src"), alt = n.getAttribute("alt");
+      [...n.attributes].forEach(at => n.removeAttribute(at.name));
+      if (n.tagName === "A" && href && /^(https?:|mailto:|\/|#)/i.test(href)) { n.setAttribute("href", href); if (/^https?:/i.test(href)) { n.setAttribute("target", "_blank"); n.setAttribute("rel", "noopener"); } }
+      if (n.tagName === "IMG") { if (src && /^(https?:|\/)/i.test(src)) { n.setAttribute("src", src); n.setAttribute("alt", alt || ""); n.setAttribute("loading", "lazy"); } else n.remove(); }
+      if (n.tagName === "P" && !n.textContent.trim() && !n.querySelector("img")) n.remove();
+    });
+  })(wrap);
+  return wrap.innerHTML;
+}
+function tekstNaarHtml(tekst) {
+  const s = String(tekst || "");
+  if (/<\s*(p|h[1-4]|ul|ol|blockquote|strong|em|br)\b/i.test(s)) return schoon(s);
+  return s.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean).map(p => `<p>${esc(p).replace(/\n/g, "<br>")}</p>`).join("");
+}
+
 function artikel(id) {
   const a = ARTIKELS.find(x => x.id === id); if (!a) return home();
-  const body = String(a.tekst || "").split(/\n\s*\n/).map(p => p.trim()).filter(Boolean).map(p => `<p>${esc(p).replace(/\n/g, "<br>")}</p>`).join("");
-  main.innerHTML = `<article class="page"><button class="back" id="back">${t().terug}</button>
-    <div class="meta">${[esc(a.medium), fmt(a.datum)].filter(Boolean).join(" · ")}</div><h2>${esc(a.titel)}</h2>
-    ${a.foto ? `<div class="hero-img"><img src="${esc(a.foto)}" alt=""></div>` : ""}
-    <div class="article-body">${body}</div></article>`;
-  document.getElementById("back").onclick = () => location.hash = "home";
-  document.title = a.titel + " · Diana Saoutieva";
+  main.innerHTML = `<article class="page lees">
+    <div class="lees-top"><button class="back" id="back">${t().terug}</button>
+      ${heeftEn(a) ? `<div class="art-lang" role="group" aria-label="${lang === "en" ? "Article language" : "Taal van het artikel"}"><button data-lang="nl" aria-pressed="${lang === "nl"}">Nederlands</button><button data-lang="en" aria-pressed="${lang === "en"}">English</button></div>` : ""}</div>
+    <header class="lees-kop">
+      <div class="meta">${[esc(a.medium), fmt(a.datum)].filter(Boolean).join(" · ")}</div>
+      <h2>${esc(tr(a, "titel"))}</h2>
+      ${tr(a, "intro") ? `<p class="lead">${esc(tr(a, "intro"))}</p>` : ""}
+    </header>
+    ${a.foto ? `<figure class="hero-img"><img src="${esc(a.foto)}" alt=""></figure>` : ""}
+    <div class="article-body" lang="${lang === "en" && a.tekst_en ? "en" : "nl"}">${tekstNaarHtml(tr(a, "tekst"))}</div>
+    <footer class="lees-voet"><button class="back" id="back2">${t().terug}</button></footer>
+  </article>`;
+  document.getElementById("back").onclick = document.getElementById("back2").onclick = () => location.hash = "home";
+  document.title = tr(a, "titel") + " · Diana Saoutieva";
+  main.querySelectorAll(".art-lang button").forEach(b => b.onclick = () => setLang(b.dataset.lang));
 }
 
 function route(keepScroll) {

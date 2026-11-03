@@ -4,7 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Diana Saoutieva</title>
-<meta name="description" content="Articles by Diana Saoutieva.">
+<meta name="description" content="Portfolio van journalist Diana Saoutieva.">
+<meta property="og:title" content="Diana Saoutieva">
+<meta property="og:description" content="Gefascineerd door buitengewone mensen en ideeën, schrijf ik verhalen die onze blik kunnen verruimen.">
+<meta property="og:image" content="https://dianasaoutieva.com/media/profiel.jpg">
+<meta property="og:url" content="https://dianasaoutieva.com/">
+<meta property="og:type" content="website">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231c1916'/%3E%3Ctext x='16' y='22' font-family='Georgia' font-size='16' fill='%23f1ece4' text-anchor='middle'%3EDS%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Instrument+Sans:wght@400;500;600&display=swap">
@@ -57,12 +62,13 @@ main{padding-block:48px;padding-left:max(16px,4vw);padding-right:max(16px,4vw,en
   background:var(--surface);color:var(--fg);border-radius:4px}
 .toolbar input{flex:1 1 260px;min-width:0}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:40px 28px}
-.card{text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:10px;cursor:pointer}
+.card{text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:10px;cursor:pointer;text-align:center;align-items:center}
+.card .thumb{align-self:stretch}
 .thumb{aspect-ratio:1;width:100%;max-width:100%;border-radius:2px;overflow:hidden;position:relative}
 .thumb span{position:absolute;left:10px;bottom:10px;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;
   background:rgba(0,0,0,.55);color:#fff;padding:3px 8px;border-radius:2px}
 .meta{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
-.card h3{font-family:var(--display);font-weight:500;font-size:1.45rem;line-height:1.15;margin:0;text-wrap:balance}
+.card h3{font-family:var(--display);font-weight:600;font-size:1.5rem;line-height:1.15;margin:0;text-wrap:balance}
 .card:hover h3{text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:4px}
 .card p{margin:0;color:var(--muted);font-size:.93rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .empty{color:var(--muted)}
@@ -95,7 +101,30 @@ main{padding-block:48px;padding-left:max(16px,4vw);padding-right:max(16px,4vw,en
 
 .card .thumb img,.hero-img img{width:100%;height:100%;object-fit:cover;display:block}
 .hero-img{aspect-ratio:16/9;margin-bottom:28px;border-radius:2px;overflow:hidden;background:var(--line)}
-.article-body p{margin:0 0 1.1em;font-size:1.08rem;line-height:1.75}
+/* leespagina */
+.lees{max-width:700px}
+.lees-kop{display:flex;flex-direction:column;gap:12px;margin-bottom:32px}
+.lees-kop h2{font-size:clamp(2rem,4vw,2.9rem);margin:0}
+.lead{font-family:var(--display);font-size:1.3rem;line-height:1.5;color:var(--muted);margin:0;text-wrap:pretty}
+.hero-img{margin:0 0 36px}
+.article-body{font-family:var(--display);font-size:1.2rem;line-height:1.75;overflow-wrap:break-word}
+.article-body>*{margin:0 0 1.1em}
+.article-body h2,.article-body h3,.article-body h4{font-family:var(--display);font-weight:600;line-height:1.25;margin:1.8em 0 .6em;text-wrap:balance}
+.article-body h2{font-size:1.6rem}.article-body h3{font-size:1.35rem}.article-body h4{font-size:1.15rem}
+.article-body a{color:inherit;text-decoration-color:var(--accent);text-underline-offset:3px}
+.article-body a:hover{color:var(--accent)}
+.article-body blockquote{border-left:3px solid var(--accent);padding-left:20px;font-style:italic;color:var(--muted)}
+.article-body ul,.article-body ol{padding-left:1.4em}
+.article-body li{margin-bottom:.4em}
+.article-body img{display:block;width:100%;height:auto;border-radius:2px}
+.article-body figcaption{font-family:var(--body);font-size:.85rem;color:var(--muted);margin-top:8px}
+.article-body hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.lees-top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-bottom:24px}
+.lees-top .back{margin:0}
+.art-lang{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--surface)}
+.art-lang button{font:inherit;font-size:.82rem;padding:6px 14px;background:none;border:0;color:var(--muted);cursor:pointer}
+.art-lang button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.lees-voet{border-top:1px solid var(--line);margin-top:48px;padding-top:20px}
 .btn{display:inline-block;padding:10px 18px;background:var(--accent);color:#fff;text-decoration:none;border-radius:4px;font-weight:500}
 </style>
 </head>
@@ -106,7 +135,7 @@ main{padding-block:48px;padding-left:max(16px,4vw);padding-right:max(16px,4vw,en
     <h1 class="name">Diana Saoutieva</h1>
     <p class="intro" id="intro"></p>
     <nav>
-      <a href="#home" data-t="navHome">Artikels</a>
+      <a href="#home" data-t="navHome">Artikelen</a>
       <a href="#contact">Contact</a>
     </nav>
     <div class="lang" role="group" aria-label="Taal / Language">
