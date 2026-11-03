@@ -11,7 +11,7 @@ content:
     list: true
     fields:
       - name: titel
-        label: Titel
+        label: Titel (Nederlands)
         type: string
         required: true
       - name: medium
@@ -30,11 +30,20 @@ content:
         label: Foto
         type: image
       - name: intro
-        label: Korte intro (1 à 2 zinnen op het kaartje)
+        label: Korte intro (Nederlands, 1 à 2 zinnen op het kaartje)
         type: text
       - name: tekst
-        label: Volledige tekst (alleen bij 'Op mijn site'; laat een witregel tussen alinea's)
+        label: Volledige tekst (Nederlands, alleen bij 'Op mijn site')
+        type: rich-text
+      - name: titel_en
+        label: English title (optioneel, Engelse versie)
+        type: string
+      - name: intro_en
+        label: English intro (optioneel)
         type: text
+      - name: tekst_en
+        label: English text (optioneel, alleen bij 'Op mijn site')
+        type: rich-text
       - name: link
         label: Link naar het artikel (alleen bij 'Link naar medium')
         type: string
