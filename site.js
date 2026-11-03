@@ -90,7 +90,7 @@ function contact() {
 }
 
 /* Opgemaakte tekst uit de tekstverwerker: alleen veilige opmaak behouden */
-const TOEGELATEN = new Set(["P","H2","H3","H4","STRONG","B","EM","I","U","S","A","UL","OL","LI","BLOCKQUOTE","BR","HR","IMG","FIGURE","FIGCAPTION"]);
+const TOEGELATEN = new Set(["P","H2","H3","H4","STRONG","B","EM","I","U","S","A","UL","OL","LI","BLOCKQUOTE","BR","HR","IMG","FIGURE","FIGCAPTION","SUP","SUB"]);
 function schoon(html) {
   const doc = new DOMParser().parseFromString("<div>" + html + "</div>", "text/html");
   const wrap = doc.body.firstChild;
@@ -102,8 +102,9 @@ function schoon(html) {
       walk(n);
       if (n.tagName === "H1") { const h = doc.createElement("h2"); h.append(...n.childNodes); n.replaceWith(h); return; }
       if (!TOEGELATEN.has(n.tagName)) { n.replaceWith(...n.childNodes); return; }
-      const href = n.getAttribute("href"), src = n.getAttribute("src"), alt = n.getAttribute("alt");
+      const href = n.getAttribute("href"), src = n.getAttribute("src"), alt = n.getAttribute("alt"), id = n.getAttribute("id");
       [...n.attributes].forEach(at => n.removeAttribute(at.name));
+      if (id && /^fn(ref)?\d+$/.test(id)) n.setAttribute("id", id);
       if (n.tagName === "A" && href && /^(https?:|mailto:|\/|#)/i.test(href)) { n.setAttribute("href", href); if (/^https?:/i.test(href)) { n.setAttribute("target", "_blank"); n.setAttribute("rel", "noopener"); } }
       if (n.tagName === "IMG") { if (src && /^(https?:|\/)/i.test(src)) { n.setAttribute("src", src); n.setAttribute("alt", alt || ""); n.setAttribute("loading", "lazy"); } else n.remove(); }
       if (n.tagName === "P" && !n.textContent.trim() && !n.querySelector("img")) n.remove();
@@ -134,6 +135,12 @@ function artikel(id) {
   document.getElementById("back").onclick = document.getElementById("back2").onclick = () => location.hash = "home";
   document.title = tr(a, "titel") + " · Diana Saoutieva";
   main.querySelectorAll(".art-lang button").forEach(b => b.onclick = () => setLang(b.dataset.lang));
+  /* voetnoten: naar de noot springen zonder de pagina te verlaten */
+  main.querySelectorAll('.article-body a[href^="#fn"]').forEach(l => l.onclick = e => {
+    e.preventDefault();
+    const doel = document.getElementById(l.getAttribute("href").slice(1));
+    if (doel) { doel.scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center"}); doel.classList.add("flits"); setTimeout(() => doel.classList.remove("flits"), 1500); }
+  });
 }
 
 function route(keepScroll) {
