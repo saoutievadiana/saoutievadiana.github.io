@@ -134,7 +134,10 @@ main{padding-block:48px;padding-left:max(16px,4vw);padding-right:max(16px,4vw,en
 .article-body h4+ol li{scroll-margin-top:24px;border-radius:2px;transition:background .3s}
 .article-body h4+ol a{overflow-wrap:anywhere}
 .article-body .flits{background:color-mix(in srgb,var(--accent) 14%,transparent)}
-.lees-voet{border-top:1px solid var(--line);margin-top:48px;padding-top:20px}
+.lees-voet{border-top:1px solid var(--line);margin-top:48px;padding-top:20px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px}
+.lees-voet .back{margin:0}
+.deel{font:inherit;font-size:.85rem;padding:7px 14px;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;cursor:pointer;overflow-wrap:anywhere;text-align:left}
+.deel:hover{border-color:var(--accent)}
 .btn{display:inline-block;padding:10px 18px;background:var(--accent);color:#fff;text-decoration:none;border-radius:4px;font-weight:500}
 </style>
 </head>

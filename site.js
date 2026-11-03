@@ -6,11 +6,11 @@ const T = {
   nl: {navHome:"Artikelen", zoek:"Zoek op titel...", alle:"Alle media", geen:"Geen artikelen gevonden.",
        leeg:"Binnenkort verschijnen hier mijn artikelen.", terug:"← Alle artikelen",
        contact:"Contact", contactSub:"Voor opdrachten, tips of samenwerkingen.", kopieer:"Kopieer", gekopieerd:"Gekopieerd",
-       type:{site:"Lees hier", link:"Externe link", pdf:"PDF"}, openPdf:"Open de pdf", openLink:"Lees het artikel", locale:"nl-BE"},
+       type:{site:"Lees hier", link:"Externe link", pdf:"PDF"}, openPdf:"Open de pdf", openLink:"Lees het artikel", deel:"Kopieer link", gedeeld:"Link gekopieerd", locale:"nl-BE"},
   en: {navHome:"Articles", zoek:"Search by title...", alle:"All publications", geen:"No articles found.",
        leeg:"My articles will appear here soon.", terug:"← All articles",
        contact:"Contact", contactSub:"For commissions, tips or collaborations.", kopieer:"Copy", gekopieerd:"Copied",
-       type:{site:"Read here", link:"External link", pdf:"PDF"}, openPdf:"Open the PDF", openLink:"Read the article", locale:"en-GB"}
+       type:{site:"Read here", link:"External link", pdf:"PDF"}, openPdf:"Open the PDF", openLink:"Read the article", deel:"Copy link", gedeeld:"Link copied", locale:"en-GB"}
 };
 
 let SITE = {}, ARTIKELS = [], lang = "nl";
@@ -130,11 +130,16 @@ function artikel(id) {
     </header>
     ${a.foto ? `<figure class="hero-img"><img src="${esc(a.foto)}" alt=""></figure>` : ""}
     <div class="article-body" lang="${lang === "en" && a.tekst_en ? "en" : "nl"}">${tekstNaarHtml(tr(a, "tekst"))}</div>
-    <footer class="lees-voet"><button class="back" id="back2">${t().terug}</button></footer>
+    <footer class="lees-voet"><button class="back" id="back2">${t().terug}</button><button class="deel" id="deel">${t().deel}</button></footer>
   </article>`;
-  document.getElementById("back").onclick = document.getElementById("back2").onclick = () => location.hash = "home";
+  document.getElementById("back").onclick = document.getElementById("back2").onclick = () => { history.pushState(null, "", "/"); route(); };
   document.title = tr(a, "titel") + " · Diana Saoutieva";
   main.querySelectorAll(".art-lang button").forEach(b => b.onclick = () => setLang(b.dataset.lang));
+  /* deellink: aparte pagina per artikel, zodat WhatsApp en LinkedIn foto en titel tonen */
+  const deelUrl = `${location.origin}/artikel/${a.id}/${lang === "en" ? "en/" : ""}`;
+  const deel = document.getElementById("deel");
+  deel.onclick = () => navigator.clipboard.writeText(deelUrl).then(() => { deel.textContent = t().gedeeld; setTimeout(() => deel.textContent = t().deel, 2000); })
+    .catch(() => { deel.textContent = deelUrl; });
   /* voetnoten: naar de noot springen zonder de pagina te verlaten */
   main.querySelectorAll('.article-body a[href^="#fn"]').forEach(l => l.onclick = e => {
     e.preventDefault();
@@ -143,16 +148,32 @@ function artikel(id) {
   });
 }
 
+/* Welke pagina? Uit de #-code, of uit een deeladres zoals /artikel/titel/ */
+function huidig() {
+  if (location.hash.length > 1) return location.hash.slice(1);
+  const m = location.pathname.match(/^\/artikel\/([a-z0-9-]+)\/(en\/)?$/);
+  return m ? "artikel-" + m[1] : "home";
+}
+/* In een artikel toont de adresbalk de deellink, zodat kopiëren uit de adresbalk ook werkt */
+function adresbalk(h) {
+  const doel = h.startsWith("artikel-") && ARTIKELS.some(a => a.id === h.slice(8) && a.soort === "site")
+    ? `/artikel/${h.slice(8)}/${lang === "en" ? "en/" : ""}`
+    : (h === "home" ? "/" : "/#" + h);
+  if (location.pathname + location.hash !== doel) { try { history.replaceState(null, "", doel); } catch (e) {} }
+}
+
 function route(keepScroll) {
-  const h = location.hash.slice(1) || "home";
+  const h = huidig();
   document.title = "Diana Saoutieva";
   document.querySelectorAll("nav a").forEach(a => {
     const on = a.getAttribute("href") === "#" + (h.startsWith("artikel-") ? "home" : h);
     on ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current");
   });
   if (h === "contact") contact(); else if (h.startsWith("artikel-")) artikel(h.slice(8)); else home();
+  adresbalk(h);
   if (keepScroll !== true) window.scrollTo(0, 0);
 }
 
 addEventListener("hashchange", () => route());
+addEventListener("popstate", () => route());
 load();
