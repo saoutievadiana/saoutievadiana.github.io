@@ -1,0 +1,89 @@
+# Publiceert de site en maakt voor elk artikel een deelpagina
+# (zodat WhatsApp, LinkedIn enz. de foto, titel en intro van het artikel tonen).
+name: Site publiceren
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publiceren:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deelpagina's maken
+        run: |
+          python3 - <<'PY'
+          import json, html, os, re, unicodedata
+          domein = "https://" + open("CNAME").read().strip()
+          artikels = json.load(open("data/artikels.json"))
+
+          def slug(s):
+              s = unicodedata.normalize("NFD", str(s).lower())
+              s = re.sub(r"[̀-ͯ]", "", s)
+              s = re.sub(r"[^a-z0-9]+", "-", s).strip("-")
+              return s[:60]
+
+          def absoluut(pad):
+              if not pad: return domein + "/media/profiel.jpg"
+              return pad if pad.startswith("http") else domein + pad
+
+          def pagina(titel, intro, foto, url, taal, doel):
+              e = lambda s: html.escape(" ".join(str(s or "").split()), quote=True)
+              zet_taal = f"try{{localStorage.setItem('lang','{taal}')}}catch(e){{}}"
+              return f"""<!doctype html>
+          <html lang="{taal}"><head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width,initial-scale=1">
+          <title>{e(titel)} · Diana Saoutieva</title>
+          <meta name="description" content="{e(intro)}">
+          <meta property="og:type" content="article">
+          <meta property="og:site_name" content="Diana Saoutieva">
+          <meta property="og:title" content="{e(titel)}">
+          <meta property="og:description" content="{e(intro)}">
+          <meta property="og:image" content="{e(foto)}">
+          <meta property="og:url" content="{e(url)}">
+          <meta name="twitter:card" content="summary_large_image">
+          <link rel="canonical" href="{e(url)}">
+          <script>{zet_taal};location.replace("{doel}");</script>
+          </head><body style="font-family:Georgia,serif;padding:40px">
+          <p><a href="{doel}">{e(titel)}</a></p>
+          </body></html>
+          """
+
+          for a in artikels:
+              if not a.get("titel") or a.get("type", "Op mijn site") != "Op mijn site":
+                  continue
+              s = slug(a["titel"])
+              doel = "/#artikel-" + s
+              foto = absoluut(a.get("foto"))
+              os.makedirs(f"artikel/{s}/en", exist_ok=True)
+              url_nl = f"{domein}/artikel/{s}/"
+              open(f"artikel/{s}/index.html", "w").write(
+                  pagina(a["titel"], a.get("intro"), foto, url_nl, "nl", doel))
+              url_en = f"{domein}/artikel/{s}/en/"
+              open(f"artikel/{s}/en/index.html", "w").write(
+                  pagina(a.get("titel_en") or a["titel"], a.get("intro_en") or a.get("intro"), foto, url_en, "en", doel))
+              print("Deelpagina:", url_nl)
+          PY
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4
