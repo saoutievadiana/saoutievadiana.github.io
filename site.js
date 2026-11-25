@@ -6,11 +6,11 @@ const T = {
   nl: {navHome:"Artikelen", zoek:"Zoek op titel...", alle:"Alle media", geen:"Geen artikelen gevonden.",
        leeg:"Binnenkort verschijnen hier mijn artikelen.", terug:"← Alle artikelen",
        contact:"Contact", contactSub:"Voor opdrachten, tips of samenwerkingen.", kopieer:"Kopieer", gekopieerd:"Gekopieerd",
-       type:{site:"Lees hier", link:"Externe link", pdf:"PDF"}, openPdf:"Open de pdf", openLink:"Lees het artikel", deel:"Kopieer link", gedeeld:"Link gekopieerd", locale:"nl-BE"},
+       type:{site:"Lees hier", link:"Externe link", pdf:"PDF", binnenkort:"Binnenkort"}, binnenkortMeta:"Binnenkort online", openPdf:"Open de pdf", openLink:"Lees het artikel", deel:"Kopieer link", gedeeld:"Link gekopieerd", locale:"nl-BE"},
   en: {navHome:"Articles", zoek:"Search by title...", alle:"All publications", geen:"No articles found.",
        leeg:"My articles will appear here soon.", terug:"← All articles",
        contact:"Contact", contactSub:"For commissions, tips or collaborations.", kopieer:"Copy", gekopieerd:"Copied",
-       type:{site:"Read here", link:"External link", pdf:"PDF"}, openPdf:"Open the PDF", openLink:"Read the article", deel:"Copy link", gedeeld:"Link copied", locale:"en-GB"}
+       type:{site:"Read here", link:"External link", pdf:"PDF", binnenkort:"Coming soon"}, binnenkortMeta:"Online soon", openPdf:"Open the PDF", openLink:"Read the article", deel:"Copy link", gedeeld:"Link copied", locale:"en-GB"}
 };
 
 let SITE = {}, ARTIKELS = [], lang = "nl";
@@ -20,16 +20,21 @@ const main = document.getElementById("main");
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const fmt = d => { const x = new Date(d); return isNaN(x) ? "" : x.toLocaleDateString(t().locale, {day:"numeric", month:"long", year:"numeric"}); };
 const slug = s => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
-const soort = a => ({"Op mijn site":"site","Link naar medium":"link","PDF":"pdf"}[a.type] || "site");
+const soort = a => ({"Op mijn site":"site","Link naar medium":"link","PDF":"pdf","Binnenkort":"binnenkort"}[a.type] || "site");
 
 async function load() {
-  const [s, a] = await Promise.all([
+  const [s, a, bk] = await Promise.all([
     fetch("data/site.json", {cache:"no-cache"}).then(r => r.json()).catch(() => ({})),
-    fetch("data/artikels.json", {cache:"no-cache"}).then(r => r.json()).catch(() => [])
+    fetch("data/artikels.json", {cache:"no-cache"}).then(r => r.json()).catch(() => []),
+    fetch("data/binnenkort.json", {cache:"no-cache"}).then(r => r.ok ? r.json() : []).catch(() => [])
   ]);
   SITE = s || {};
-  ARTIKELS = (Array.isArray(a) ? a : []).filter(x => x && x.titel).map(x => ({...x, id: slug(x.titel), soort: soort(x)}));
-  document.getElementById("foto").src = SITE.profielfoto || "";
+  ARTIKELS = (Array.isArray(a) ? a : []).filter(x => x && x.titel).map(x => ({...x, id: slug(x.deellink || x.titel), soort: soort(x)}));
+  /* Binnenkort-kaartjes staan in een apart bestand (data/binnenkort.json) */
+  (Array.isArray(bk) ? bk : []).filter(x => x && x.titel).forEach(x => ARTIKELS.push({...x, id: "binnenkort-" + slug(x.titel), soort: "binnenkort"}));
+  /* Geen profielfoto ingevuld? Dan verdwijnt het vak helemaal, zonder lege ruimte */
+  const foto = document.getElementById("foto");
+  if (SITE.profielfoto) foto.src = SITE.profielfoto; else foto.hidden = true;
   if (SITE.achtergrond) document.getElementById("side").style.setProperty("--bg-img", `url("${SITE.achtergrond}")`);
   document.querySelectorAll(".lang button").forEach(b => b.onclick = () => setLang(b.dataset.lang));
   setLang(lang === "en" ? "en" : "nl");
@@ -63,8 +68,13 @@ function home() {
     const q = document.getElementById("zoek").value.toLowerCase();
     const m = document.getElementById("medium")?.value || "";
     const list = ARTIKELS.filter(a => (a.titel + " " + (a.titel_en || "")).toLowerCase().includes(q) && (!m || a.medium === m))
-                         .sort((a, b) => String(b.datum).localeCompare(String(a.datum)));
+                         .sort((a, b) => ((b.soort === "binnenkort") - (a.soort === "binnenkort")) || String(b.datum).localeCompare(String(a.datum)));
     document.getElementById("grid").innerHTML = list.length ? list.map(a => {
+      /* Binnenkort: zelfde kaartje, maar niet aanklikbaar */
+      if (a.soort === "binnenkort") return `<div class="card card--binnenkort" aria-label="${esc(t().type.binnenkort)}: ${esc(tr(a, "titel"))}">
+        <div class="thumb" style="background:var(--line)">${thumb(a, `<span>${t().type.binnenkort}</span>`)}</div>
+        <div class="meta">${[esc(a.medium), t().binnenkortMeta].filter(Boolean).join(" · ")}</div>
+        <h3>${esc(tr(a, "titel"))}</h3>${tr(a, "intro") ? `<p>${esc(tr(a, "intro"))}</p>` : ""}</div>`;
       const href = a.soort === "link" ? a.link : a.soort === "pdf" ? a.pdf : "#artikel-" + a.id;
       const ext = a.soort === "site" ? "" : ' target="_blank" rel="noopener"';
       return `<a class="card" href="${esc(href)}"${ext}>
@@ -119,7 +129,7 @@ function tekstNaarHtml(tekst) {
 }
 
 function artikel(id) {
-  const a = ARTIKELS.find(x => x.id === id); if (!a) return home();
+  const a = ARTIKELS.find(x => x.id === id); if (!a || a.soort === "binnenkort") return home();
   main.innerHTML = `<article class="page lees">
     <div class="lees-top"><button class="back" id="back">${t().terug}</button>
       ${heeftEn(a) ? `<div class="art-lang" role="group" aria-label="${lang === "en" ? "Article language" : "Taal van het artikel"}"><button data-lang="nl" aria-pressed="${lang === "nl"}">Nederlands</button><button data-lang="en" aria-pressed="${lang === "en"}">English</button></div>` : ""}</div>

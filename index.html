@@ -70,6 +70,12 @@ main{padding-block:48px;padding-left:max(16px,4vw);padding-right:max(16px,4vw,en
 .meta{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
 .card h3{font-family:var(--display);font-weight:600;font-size:1.5rem;line-height:1.15;margin:0;text-wrap:balance}
 .card:hover h3{text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:4px}
+.card--binnenkort{cursor:default}
+.card--binnenkort .thumb img{filter:saturate(.7) brightness(.82)}
+.card--binnenkort .thumb span{background:var(--accent)}
+.card--binnenkort:hover h3{text-decoration:none}
+.card.card--binnenkort:hover .thumb{transform:none}
+.card--binnenkort h3{color:var(--muted)}
 .card p{margin:0;color:var(--muted);font-size:.93rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .empty{color:var(--muted)}
 
