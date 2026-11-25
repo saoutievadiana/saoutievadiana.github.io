@@ -1,21 +1,21 @@
 # Publiceert de site en maakt voor elk artikel een deelpagina
 # (zodat WhatsApp, LinkedIn enz. de foto, titel en intro van het artikel tonen).
 name: Site publiceren
-
+ 
 on:
   push:
     branches: [main]
   workflow_dispatch:
-
+ 
 permissions:
   contents: read
   pages: write
   id-token: write
-
+ 
 concurrency:
   group: pages
   cancel-in-progress: true
-
+ 
 jobs:
   publiceren:
     runs-on: ubuntu-latest
@@ -23,25 +23,25 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
-
+      - uses: actions/checkout@v5
+ 
       - name: Deelpagina's maken
         run: |
           python3 - <<'PY'
           import json, html, os, re, unicodedata
           domein = "https://" + open("CNAME").read().strip()
           artikels = json.load(open("data/artikels.json"))
-
+ 
           def slug(s):
               s = unicodedata.normalize("NFD", str(s).lower())
               s = re.sub(r"[̀-ͯ]", "", s)
               s = re.sub(r"[^a-z0-9]+", "-", s).strip("-")
               return s[:60]
-
+ 
           def absoluut(pad):
               if not pad: return domein + "/media/profiel.jpg"
               return pad if pad.startswith("http") else domein + pad
-
+ 
           def pagina(titel, intro, foto, url, taal, doel):
               e = lambda s: html.escape(" ".join(str(s or "").split()), quote=True)
               zet_taal = f"try{{localStorage.setItem('lang','{taal}')}}catch(e){{}}"
@@ -64,11 +64,11 @@ jobs:
           <p><a href="{doel}">{e(titel)}</a></p>
           </body></html>
           """
-
+ 
           for a in artikels:
               if not a.get("titel") or a.get("type", "Op mijn site") != "Op mijn site":
                   continue
-              s = slug(a["titel"])
+              s = slug(a.get("deellink") or a["titel"])
               doel = "/#artikel-" + s
               foto = absoluut(a.get("foto"))
               os.makedirs(f"artikel/{s}/en", exist_ok=True)
@@ -80,10 +80,11 @@ jobs:
                   pagina(a.get("titel_en") or a["titel"], a.get("intro_en") or a.get("intro"), foto, url_en, "en", doel))
               print("Deelpagina:", url_nl)
           PY
-
+ 
       - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v4
         with:
           path: .
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
+ 
