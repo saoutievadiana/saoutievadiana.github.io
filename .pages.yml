@@ -1,7 +1,7 @@
 media:
   input: media
   output: /media
-
+ 
 content:
   - name: artikels
     label: Artikels
@@ -14,6 +14,9 @@ content:
         label: Titel (Nederlands)
         type: string
         required: true
+      - name: deellink
+        label: Deellink (vaste naam voor de link, bv. ingoesjen-prigorodny. Na het delen niet meer wijzigen. Leeg = gemaakt uit de titel)
+        type: string
       - name: medium
         label: Medium (bv. De Standaard, Eigen werk)
         type: string
@@ -50,7 +53,34 @@ content:
       - name: pdf
         label: PDF-bestand (alleen bij 'PDF')
         type: file
-
+ 
+  - name: binnenkort
+    label: Binnenkort
+    type: file
+    path: data/binnenkort.json
+    format: json
+    list: true
+    fields:
+      - name: titel
+        label: Titel (Nederlands)
+        type: string
+        required: true
+      - name: titel_en
+        label: English title
+        type: string
+      - name: medium
+        label: Medium
+        type: string
+      - name: foto
+        label: Foto
+        type: image
+      - name: intro
+        label: Teaser (Nederlands, 1 zin)
+        type: text
+      - name: intro_en
+        label: Teaser (English, 1 sentence)
+        type: text
+ 
   - name: profiel
     label: Profiel en contact
     type: file
@@ -75,3 +105,4 @@ content:
       - name: achtergrond
         label: Achtergrondfoto zijbalk
         type: image
+ 
