@@ -1,27 +1,25 @@
-# Publiceert de site en maakt voor elk artikel een deelpagina
-# (zodat WhatsApp, LinkedIn enz. de foto, titel en intro van het artikel tonen).
+# Maakt voor elk artikel een deelpagina (zodat WhatsApp, LinkedIn enz. de foto,
+# titel en intro van het artikel tonen) en zet die in de map "artikel".
+# GitHub Pages publiceert de site daarna zelf vanuit de branch main.
 name: Site publiceren
  
 on:
   push:
     branches: [main]
+    paths: ["data/**"]
   workflow_dispatch:
  
 permissions:
-  contents: read
+  contents: write
   pages: write
-  id-token: write
  
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: deelpaginas
+  cancel-in-progress: false
  
 jobs:
   publiceren:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v5
  
@@ -81,10 +79,19 @@ jobs:
               print("Deelpagina:", url_nl)
           PY
  
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v4
-        with:
-          path: .
-      - id: deployment
-        uses: actions/deploy-pages@v5
+ 
+      - name: Opslaan en publiceren
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git add artikel
+          if git diff --cached --quiet; then
+            echo "Deelpagina's zijn al up-to-date."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "Deelpagina's bijwerken"
+            git push
+            gh api -X POST "repos/${{ github.repository }}/pages/builds" || true
+          fi
  
